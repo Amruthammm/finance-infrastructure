@@ -78,6 +78,18 @@ module cosmosDb 'modules/cosmosDb.bicep' = {
   ]
 }
 
+module keyVault 'modules/keyvault.bicep' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'keyvault-deployment'
+  params: {
+    baseName: 'finance'
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.dataSubnetId
+  }
+}
+
 // Outputs
 output resourceGroupName string = rg.outputs.resourceGroupName
 output vnetName string = networking.outputs.vnetName
@@ -86,3 +98,4 @@ output appSubnetId string = networking.outputs.appSubnetId
 output webAppName string = appService.outputs.webAppName
 output webAppHostName string = appService.outputs.webAppHostName
 output cosmosAccountName string = cosmosDb.outputs.accountName
+output keyVaultName string = keyVault.outputs.keyVaultName
