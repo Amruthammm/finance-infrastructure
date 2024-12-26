@@ -1,7 +1,6 @@
 // main.bicep
 targetScope = 'subscription'
 
-// Parameters
 @description('Environment (dev, test, or prod)')
 @allowed([
   'dev'
@@ -11,7 +10,7 @@ targetScope = 'subscription'
 param environment string = 'dev'
 
 @description('Location for all resources')
-param location string = 'eastus'
+param location string = 'canadacentral'
 
 // Common tags
 var tags = {
@@ -19,8 +18,9 @@ var tags = {
   Application: 'Finance'
   ManagedBy: 'Bicep'
 }
+var resourceGroupName = 'rg-finance-${environment}'
 
-// Create Resource Group using the module
+// Create Resource Group
 module rg 'modules/resourceGroup.bicep' = {
   name: 'resourceGroup-deployment'
   params: {
@@ -31,23 +31,10 @@ module rg 'modules/resourceGroup.bicep' = {
   }
 }
 
-module storage 'modules/storage.bicep' = {
-  scope: resourceGroup('rg-finance-${environment}') 
-  name: 'storage-deployment'
-  params: {
-    environment: environment
-    location: location
-    tags: tags
-  }
-  dependsOn: [
-    rg
-  ]
-}
-
-// // Deploy App Service into the resource group
-// module appService 'modules/appService.bicep' = {
-//   scope: resourceGroup(rg.outputs.resourceGroupName)  // Reference the created resource group
-//   name: 'appService-deployment'
+// Deploy networking
+// module networking 'modules/networking.bicep' = {
+//   scope: resourceGroup('rg-finance-${environment}')
+//   name: 'networking-deployment'
 //   params: {
 //     baseName: 'finance'
 //     environment: environment
@@ -55,12 +42,30 @@ module storage 'modules/storage.bicep' = {
 //     tags: tags
 //   }
 //   dependsOn: [
-//     rg  // Make sure resource group exists before deploying app service
+//     rg
 //   ]
 // }
 
+// Deploy App Service
+module appService 'modules/appService.bicep' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'appService-deployment'
+  params: {
+    baseName: 'finance' //Pass parameters to module
+    environment: environment
+    location: location
+    tags: tags
+    resourceGroupName: resourceGroupName
+    //subnetId: networking.outputs.webAppSubnetId
+  }
+  dependsOn: [
+   // networking
+   rg
+  ]
+}
+
 // Outputs
 output resourceGroupName string = rg.outputs.resourceGroupName
-output storageAccountName string = storage.outputs.storageAccountName
-// output webAppName string = appService.outputs.webAppName
-// output webAppHostName string = appService.outputs.webAppHostName
+//output vnetName string = networking.outputs.vnetName
+output webAppName string = appService.outputs.webAppName
+output webAppHostName string = appService.outputs.webAppHostName

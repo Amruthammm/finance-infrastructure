@@ -1,52 +1,75 @@
 // modules/appService.bicep
-@description('Base name for the app service')
+
+@description('Base name for the resources')
 param baseName string
 
-@description('Location for the App Service')
-param location string = resourceGroup().location
-
-@description('Environment (dev, test, or prod)')
+@description('Environment name')
 param environment string
 
-@description('App Service Plan SKU')
-param skuName string = 'F1'
+@description('Azure region')
+param location string
 
-@description('Tags for resources')
-param tags object = {
-  Environment: environment
-  Application: 'Finance'
-}
+@description('Resource tags')
+param tags object
 
-var appServicePlanName = 'plan-${baseName}-${environment}'
-var webAppName = 'app-${baseName}-${environment}'
+@description('Resource Group Name')
+param resourceGroupName string
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2021-02-01' = {
+// @description('Subnet ID for VNet integration')
+// param subnetId string
+
+// Add unique suffix generation
+var deploymentId = uniqueString(resourceGroup().id)
+var appServicePlanName = 'ASP-testsynapseworkspacgroup-${deploymentId}' 
+var webAppName = 'app-${baseName}-${environment}-${deploymentId}'
+
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: appServicePlanName
   location: location
   tags: tags
   sku: {
-    name: skuName
+    name: 'F1'
+    tier: 'Free'
+    size: 'F1'
+    family: 'F'
+    capacity: 1
   }
-  kind: 'linux'
+  kind: 'windows'
   properties: {
-    reserved: true
+    reserved: false
+    perSiteScaling: false
+    maximumElasticWorkerCount: 1
+    isSpot: false
+    targetWorkerCount: 0
+    targetWorkerSizeId: 0
   }
 }
 
-resource webApp 'Microsoft.Web/sites@2021-02-01' = {
+// Web App
+resource webApp 'Microsoft.Web/sites@2022-09-01' = {
   name: webAppName
   location: location
   tags: tags
-  kind: 'app'
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: appServicePlan.id    // Reference the newly created plan
     httpsOnly: true
     siteConfig: {
-      linuxFxVersion: 'DOTNETCORE|6.0'
-      alwaysOn: true
+      alwaysOn: false 
+      http20Enabled: true
+      minTlsVersion: '1.2'
+      ftpsState: 'FtpsOnly'
+      use32BitWorkerProcess: true 
+      appSettings: [
+        {
+          name: 'WEBSclearITE_NODE_DEFAULT_VERSION'
+          value: '~18'
+        }
+      ]
     }
   }
 }
 
+// Outputs
 output webAppName string = webApp.name
 output webAppHostName string = webApp.properties.defaultHostName
