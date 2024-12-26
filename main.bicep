@@ -63,6 +63,18 @@ module appService 'modules/appService.bicep' = {
   ]
 }
 
+module functionApp 'modules/functionApp.bicep' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'functionapp-deployment'
+  params: {
+    baseName: 'finance'
+    environment: environment
+    location: location
+    tags: tags
+   // subnetId: networking.outputs.appSubnetId //Pass parameters to module if used premium plan
+  }
+}
+
 module cosmosDb 'modules/cosmosDb.bicep' = {
   scope: resourceGroup(resourceGroupName)
   name: 'cosmos-deployment'
