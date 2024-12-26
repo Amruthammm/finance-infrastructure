@@ -31,22 +31,22 @@ module rg 'modules/resourceGroup.bicep' = {
   }
 }
 
-// Deploy networking
-// module networking 'modules/networking.bicep' = {
-//   scope: resourceGroup('rg-finance-${environment}')
-//   name: 'networking-deployment'
-//   params: {
-//     baseName: 'finance'
-//     environment: environment
-//     location: location
-//     tags: tags
-//   }
-//   dependsOn: [
-//     rg
-//   ]
-// }
+// Deploy networking only
+module networking 'modules/networking.bicep' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'networking-deployment'
+  params: {
+    baseName: 'finance'
+    environment: environment
+    location: location
+    tags: tags
+  }
+  dependsOn: [
+    rg
+  ]
+}
 
-// Deploy App Service
+// Deploy App Service with VNet integration
 module appService 'modules/appService.bicep' = {
   scope: resourceGroup(resourceGroupName)
   name: 'appService-deployment'
@@ -56,16 +56,33 @@ module appService 'modules/appService.bicep' = {
     location: location
     tags: tags
     resourceGroupName: resourceGroupName
-    //subnetId: networking.outputs.webAppSubnetId
+    subnetId: networking.outputs.appSubnetId  // Connect to the app subnet    
   }
   dependsOn: [
-   // networking
-   rg
+   rg   
+  ]
+}
+
+module cosmosDb 'modules/cosmosDb.bicep' = {
+  scope: resourceGroup(resourceGroupName)
+  name: 'cosmos-deployment'
+  params: {
+    baseName: 'finance'
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.dataSubnetId
+  }
+  dependsOn: [
+    rg
   ]
 }
 
 // Outputs
 output resourceGroupName string = rg.outputs.resourceGroupName
-//output vnetName string = networking.outputs.vnetName
+output vnetName string = networking.outputs.vnetName
+output defaultSubnetId string = networking.outputs.defaultSubnetId
+output appSubnetId string = networking.outputs.appSubnetId
 output webAppName string = appService.outputs.webAppName
 output webAppHostName string = appService.outputs.webAppHostName
+output cosmosAccountName string = cosmosDb.outputs.accountName

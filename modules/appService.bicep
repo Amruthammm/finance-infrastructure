@@ -15,6 +15,9 @@ param tags object
 @description('Resource Group Name')
 param resourceGroupName string
 
+@description('Subnet Id')
+param subnetId string 
+
 // @description('Subnet ID for VNet integration')
 // param subnetId string
 
@@ -29,10 +32,10 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   location: location
   tags: tags
   sku: {
-    name: 'F1'
-    tier: 'Free'
-    size: 'F1'
-    family: 'F'
+    name: 'B1'        // Basic tier required for VNet integration
+    tier: 'Basic'
+    size: 'B1'
+    family: 'B'
     capacity: 1
   }
   kind: 'windows'
@@ -52,24 +55,30 @@ resource webApp 'Microsoft.Web/sites@2022-09-01' = {
   location: location
   tags: tags
   properties: {
-    serverFarmId: appServicePlan.id    // Reference the newly created plan
+    serverFarmId: appServicePlan.id
     httpsOnly: true
+    virtualNetworkSubnetId: subnetId  // VNet integration
     siteConfig: {
-      alwaysOn: false 
+      vnetRouteAllEnabled: true      // Route all traffic through VNet
+      alwaysOn: true                 // Supported in Basic tier
       http20Enabled: true
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
       use32BitWorkerProcess: true 
       appSettings: [
         {
-          name: 'WEBSclearITE_NODE_DEFAULT_VERSION'
+          name: 'WEBSITE_NODE_DEFAULT_VERSION'
           value: '~18'
+        }
+        {
+          name: 'WEBSITE_VNET_ROUTE_ALL' // Required for VNet routing
+          value: '1'
         }
       ]
     }
   }
 }
-
 // Outputs
 output webAppName string = webApp.name
 output webAppHostName string = webApp.properties.defaultHostName
+output appServicePlanName string = appServicePlan.name
