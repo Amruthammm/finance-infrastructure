@@ -8,7 +8,7 @@ param tags object
 
 
 var storageAccountName = take('stfunc${baseName}${environment}${uniqueString(resourceGroup().id)}', 24)
-var functionAppName = 'func-${baseName}-${environment}'
+var functionAppName = take('func-${baseName}${environment}${uniqueString(resourceGroup().id)}', 24)
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: storageAccountName
