@@ -17,8 +17,8 @@ resource dataFactory 'Microsoft.DataFactory/factories@2018-06-01' = {
   location: location
   tags: tags
   identity: {
-    type: 'SystemAssigned'
-  }
+    type: 'SystemAssigned' // Creates System-Assigned Identity
+  }  
   properties: {
     publicNetworkAccess: 'Enabled'    // Can be disabled after private endpoint setup
     globalParameters: {}

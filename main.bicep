@@ -208,6 +208,7 @@ module managedIdentity 'modules/managedIdentity.bicep' = {
     environment: environment
     location: location
     tags: tags
+   // keyVaultName: keyVault.outputs.keyVaultName  // Pass Key Vault name from Key Vault module
   }
 }
 
