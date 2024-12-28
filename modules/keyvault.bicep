@@ -5,7 +5,7 @@ param location string
 param tags object
 param subnetId string
 
-var uniqueSuffix = uniqueString(subscription().id, resourceGroup().id)
+var uniqueSuffix = uniqueString(subscription().id, resourceGroup().id, deployment().name)
 var kvName = 'kv${baseName}${environment}${take(uniqueSuffix, 5)}'
 var privateEndpointName = 'pe-${kvName}'
 
