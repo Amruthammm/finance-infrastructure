@@ -4,7 +4,7 @@
 targetScope = 'subscription'
 
 @description('Name prefix for the resource group')
-param baseName string
+param baseName string = 'finance'
 
 @description('Environment (dev, test, or prod)')
 @allowed([
@@ -12,10 +12,10 @@ param baseName string
   'test'
   'prod'
 ])
-param environment string
+param environment string = 'dev'
 
 @description('Azure region for resource group')
-param location string
+param location string = 'canadacentral'
 
 @description('Tags for the resource group')
 param tags object = {

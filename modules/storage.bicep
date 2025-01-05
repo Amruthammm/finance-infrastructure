@@ -1,11 +1,7 @@
 // modules/storage.bicep
+@description('Base name for the resources')
+param baseName string
 
-@description('Environment (dev, test, or prod)')
-@allowed([
-  'dev'
-  'test'
-  'prod'
-])
 param environment string
 
 @description('Location for the storage account')
@@ -26,9 +22,12 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
   kind: 'StorageV2'
   properties: {
-    minimumTlsVersion: 'TLS1_2'
-    allowBlobPublicAccess: false
-    supportsHttpsTrafficOnly: true
+    allowBlobPublicAccess: true
+    // minimumTlsVersion: 'TLS1_2'
+    // allowBlobPublicAccess: false
+    // supportsHttpsTrafficOnly: true
+    
+
     // networkAcls: {
     //   bypass: 'AzureServices'
     //   defaultAction: 'Deny'  // Locked down by default
@@ -36,7 +35,20 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
 }
 
-// // Create blob service and container
+// Create table service
+resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-01-01' = {
+  parent: storageAccount
+  name: 'default'
+}
+
+// Create table
+resource table 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-01-01' = {
+  parent: tableService
+  name: 'customertable'  // Your table name
+}
+
+//Added images into blob service
+// // // Create blob service and container
 // resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
 //   parent: storageAccount
 //   name: 'default'
@@ -50,9 +62,10 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
 
 // resource container 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
 //   parent: blobService
-//   name: 'finance'
+//   name: 'images'
 //   properties: {
-//     publicAccess: 'None'
+//      publicAccess: 'Container'
+//    // publicAccess: 'None'
 //   }
 // }
 
