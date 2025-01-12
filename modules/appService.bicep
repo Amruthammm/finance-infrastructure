@@ -31,7 +31,7 @@ var deploymentId = uniqueString(resourceGroup().id)
 var appServicePlanName = 'plan-${baseName}-${environment}-${deploymentId}'
 var webAppName = 'app-${baseName}-${environment}-${deploymentId}'
 
-// Create a appservice plan
+// Create app service plan
 resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: appServicePlanName
   location: location
@@ -54,55 +54,73 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-09-01' = {
   }
 }
 
+// Create web app with VNet integration and system-assigned identity
 resource webApp 'Microsoft.Web/sites@2022-09-01' = {
   name: webAppName
   location: location
   tags: tags
+  identity: {
+    type: 'SystemAssigned'    // Enable system-assigned managed identity
+  }
   properties: {
     serverFarmId: appServicePlan.id
     httpsOnly: true
+    virtualNetworkSubnetId: subnetId  // VNet integration
     siteConfig: {
+      vnetRouteAllEnabled: true       // Route all traffic through VNet
+      alwaysOn: true                  // Supported in Basic tier
+      http20Enabled: true
+      minTlsVersion: '1.2'
+      ftpsState: 'FtpsOnly'
+      use32BitWorkerProcess: true
       appSettings: [
+        {
+          name: 'WEBSITE_NODE_DEFAULT_VERSION'
+          value: '~18'
+        }
+        {
+          name: 'WEBSITE_VNET_ROUTE_ALL'      // Required for VNet routing
+          value: '1'
+        }
         {
           name: 'STORAGE_ACCOUNT_NAME'
           value: storageAccountName
         }
         {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'  //for enabling application logs
+          name: 'WEBSITE_RESOURCE_GROUP'
+          value: resourceGroupName
+        }
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
           value: appInsightsConnectionString
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsightsConnectionString
         }
+        {
+          name: 'APPLICATIONINSIGHTS_ROLE_NAME'
+          value: webAppName
+        }
+        {
+          name: 'WEBSITE_WEBDEPLOY_USE_SCM'
+          value: 'false'
+        }
+        {
+          name: 'WEBSITE_RUN_FROM_PACKAGE'
+          value: '1'
+        }
+        {
+          name: 'WEBSITE_VNET_ROUTE_ALL'
+          value: '1'
+        }
       ]
-      logs: {
-        httpLogs: {
-          fileSystem: {
-            retentionInMb: 35
-            retentionInDays: 7
-            enabled: true
-          }
-        }
-        applicationLogs: {
-          fileSystem: {
-            level: 'Warning'
-            retentionInMb: 35
-            retentionInDays: 7
-            enabled: true
-          }
-        }
-        detailedErrorMessages: {
-          enabled: true
-        }
-        failedRequestsTracing: {
-          enabled: true
-        }
-      }
+      logsDirectorySizeLimit: 35
+      detailedErrorLoggingEnabled: true
+      httpLoggingEnabled: true
+      requestTracingEnabled: true
+      scmIpSecurityRestrictionsUseMain: true
     }
-  }
-  identity: {
-    type: 'SystemAssigned'
   }
 }
 
@@ -117,47 +135,17 @@ resource webAppConfig 'Microsoft.Web/sites/config@2022-09-01' = {
   }
 }
 
-// resource webApp 'Microsoft.Web/sites@2022-09-01' = {
-//   name: webAppName
-//   location: location
-//   tags: tags
-//   properties: {
-//     serverFarmId: appServicePlan.id
-//     httpsOnly: true
-//     virtualNetworkSubnetId: subnetId // VNet integration
-//     siteConfig: {
-//       vnetRouteAllEnabled: true // Route all traffic through VNet
-//       alwaysOn: true            // Supported in Basic tier
-//       http20Enabled: true
-//       minTlsVersion: '1.2'
-//       ftpsState: 'FtpsOnly'
-//       use32BitWorkerProcess: true 
-//       appSettings: [
-//         {
-//           name: 'WEBSITE_NODE_DEFAULT_VERSION'
-//           value: '~18'
-//         }
-//         {
-//           name: 'WEBSITE_VNET_ROUTE_ALL'   // Required for VNet routing
-//           value: '1' 
-//         }
-//         {
-//           name: 'WEBSITE_RESOURCE_GROUP'
-//           value: resourceGroupName
-//         } 
-//         {
-//           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING' // This setting in webApp enables Application Insights monitoring
-//           value: appInsightsConnectionString
-//         }       
-//         {
-//           name: 'APPLICATIONINSIGHTS_ROLE_NAME'
-//           value: webAppName
-//         }
-//       ]
-//     }
-//   }
-// }
+// Configure VNet integration
+resource networkConfig 'Microsoft.Web/sites/networkConfig@2022-09-01' = {
+  parent: webApp
+  name: 'virtualNetwork'
+  properties: {
+    subnetResourceId: subnetId
+    swiftSupported: true
+  }
+}
 
+// Configure diagnostics
 resource webAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: 'webappDiagnostics-${environment}'
   scope: webApp
@@ -194,3 +182,5 @@ resource webAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
 output webAppName string = webApp.name
 output webAppHostName string = webApp.properties.defaultHostName
 output appServicePlanName string = appServicePlan.name
+output systemAssignedIdentityPrincipalId string = webApp.identity.principalId  // Return the system-assigned identity principal ID
+output systemAssignedIdentityTenantId string = webApp.identity.tenantId      // Return the system-assigned identity tenant ID

@@ -5,9 +5,7 @@ param location string
 param tags object
 @description('Resource Group Name')
 param resourceGroupName string
-//param subnetId string //if used premium get param from main 
-
-
+param subnetId string //if used premium get param from main 
 
 var deploymentId = uniqueString(resourceGroup().id)
 var storageAccountName = take('stfunc${baseName}${environment}${deploymentId}', 24)
@@ -28,26 +26,46 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   }
 }
 
-// Consumption plan (serverless)
+// Premium plan for VNet integration support
 resource hostingPlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: 'plan-${functionAppName}'
   location: location
   tags: tags
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'EP1'
+    tier: 'ElasticPremium'
   }
-  properties: {}
+  properties: {
+    maximumElasticWorkerCount: 20
+  }
 }
+
+// // Consumption plan (serverless)
+// resource hostingPlan 'Microsoft.Web/serverfarms@2023-01-01' = {
+//   name: 'plan-${functionAppName}'
+//   location: location
+//   tags: tags
+//   sku: {
+//     name: 'Y1'
+//     tier: 'Dynamic'
+//   }
+//   properties: {}
+// }
 
 
 resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   name: functionAppName
   location: location
   kind: 'functionapp'
+  identity: {
+    type: 'SystemAssigned'  // Enable system-assigned managed identity
+  }
   properties: {
     serverFarmId: hostingPlan.id
+    virtualNetworkSubnetId: subnetId  // VNet integration
+    httpsOnly: true
     siteConfig: {
+      vnetRouteAllEnabled: true      // Route all traffic through VNet
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
       appSettings: [
@@ -79,56 +97,30 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
           name: 'WEBSITE_RESOURCE_GROUP'
           value: resourceGroupName
         }
+        {
+          name: 'WEBSITE_VNET_ROUTE_ALL'
+          value: '1'
+        }
       ]
     }
-    httpsOnly: true
   }
 }
 
-//VNET not supported in consumption plan. Below is the app data subnet connection for function premium
-// resource hostingPlan 'Microsoft.Web/serverfarms@2022-09-01' = {
-//  name: hostingPlanName
-//  location: location
-//  tags: tags
-//  sku: {
-//    name: 'EP1'
-//    tier: 'ElasticPremium'
-//  }
-//  properties: {
-//    maximumElasticWorkerCount: 20
-//  }
-// }
-
-// resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
-//  name: functionAppName
-//  location: location
-//  tags: tags
-//  kind: 'functionapp'
-//  properties: {
-//    serverFarmId: hostingPlan.id
-//    virtualNetworkSubnetId: subnetId
-//    siteConfig: {
-//      vnetRouteAllEnabled: true
-//      appSettings: [
-//        {
-//          name: 'AzureWebJobsStorage'
-//          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-//        }
-//        {
-//          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-//          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-//        }
-//        {
-//          name: 'FUNCTIONS_EXTENSION_VERSION'
-//          value: '~4'
-//        }
-//        {
-//          name: 'FUNCTIONS_WORKER_RUNTIME'
-//          value: 'dotnet'
-//        }
-//      ]
-//    }
-//  }
-// }
+// Configure VNet integration
+resource networkConfig 'Microsoft.Web/sites/networkConfig@2023-01-01' = {
+  parent: functionApp
+  name: 'virtualNetwork'
+  properties: {
+    subnetResourceId: subnetId
+    swiftSupported: true
+  }
+}
 
 output functionAppName string = functionApp.name
+output functionAppPrincipalId string = functionApp.identity.principalId  // System-assigned identity principal ID
+output functionAppTenantId string = functionApp.identity.tenantId      // System-assigned identity tenant ID
+
+
+
+
+

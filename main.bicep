@@ -12,6 +12,9 @@ param tags object
 
 param baseName string
 
+@description('Network configuration')
+param networkConfig object
+
 // param adminUsername string
 // @secure()
 // param adminPassword string
@@ -25,6 +28,7 @@ module networking 'modules/networking.bicep' = {
     environment: environment
     location: location
     tags: tags
+    networkConfig: networkConfig
   } 
 }
 
@@ -36,6 +40,7 @@ module logAnalytics 'modules/logAnalytics.bicep' = {
     environment: environment
     location: location
     tags: tags    
+    subnetId: networking.outputs.sharedSubnetId
   }
 }
 
@@ -48,6 +53,7 @@ module appInsights 'modules/appInsights.bicep' = {
     location: location
     tags: tags
     logAnalyticsWorkspaceId: logAnalytics.outputs.logAnalyticsId    
+    subnetId: networking.outputs.applicationSubnetId 
   }
 }
 
@@ -58,6 +64,7 @@ module storage 'modules/storage.bicep' = {
     environment: environment
     location: location
     tags: tags
+    subnetId: networking.outputs.dataSubnetId 
   }
 }
 
@@ -71,86 +78,94 @@ module appService 'modules/appService.bicep' = {
     tags: tags
     resourceGroupName: resourceGroupName
     storageAccountName: storage.outputs.storageAccountName
-    subnetId: networking.outputs.appSubnetId  // Connect to the app subnet    
+    subnetId: networking.outputs.applicationSubnetId  // Connect to the app subnet    
     logAnalyticsWorkspaceId: logAnalytics.outputs.logAnalyticsId
     appInsightsConnectionString: appInsights.outputs.connectionString
 
   }
 }
 
-// module functionApp 'modules/functionApp.bicep' = {  
-//   name: 'functionapp-deployment'
-//   params: {
-//     baseName: 'finance'
-//     environment: environment
-//     location: location
-//     tags: tags
-//     resourceGroupName: resourceGroupName
-//    // subnetId: networking.outputs.appSubnetId //Pass parameters to module if used premium plan 
-//   }
-// }
+module functionApp 'modules/functionApp.bicep' = {  
+  name: 'functionapp-deployment'
+  params: {
+    baseName: baseName
+    environment: environment
+    location: location
+    tags: tags
+    resourceGroupName: resourceGroupName
+    subnetId: networking.outputs.applicationSubnetId  //Pass parameters to module if used premium plan 
+  }
+}
+module aks 'modules/aks.bicep' = {  
+  name: 'aks-deployment'
+  params: {
+    baseName: baseName
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.applicationSubnetId
+  }
+}
+module containerApp 'modules/containerApp.bicep' = {
+  name: 'containerapp-deployment'
+  params: {
+    baseName: baseName
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.applicationSubnetId
+  }
+}
 
-// module aks 'modules/aks.bicep' = {  
-//   name: 'aks-deployment'
-//   params: {
-//     baseName: 'finance'
-//     environment: environment
-//     location: location
-//     tags: tags
-//     subnetId: networking.outputs.aksSubnetId
-//   }
-//   dependsOn: [
-//           rg
-//        ]
-// }
-// module containerApp 'modules/containerApp.bicep' = {
-//   name: 'containerapp-deployment'
-//   params: {
-//     baseName: 'finance'
-//     environment: environment
-//     location: location
-//     tags: tags
-//     subnetId: networking.outputs.containerAppSubnetId  
-//     resourceGroupName: resourceGroupName
-//   }
-// }
-//  module cosmosDb 'modules/cosmosDb.bicep' = {  
-//    name: 'cosmos-deployment'
-//    params: {
-//      baseName: 'finance'
-//      environment: environment
-//      location: location
-//      tags: tags
-//      subnetId: networking.outputs.dataSubnetId
-//    }
-//    dependsOn: [
-//      rg
-//    ]
-//  }
+module cosmosDb 'modules/cosmosDb.bicep' = {  
+  name: 'cosmos-deployment'
+  params: {
+    baseName: baseName
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.dataSubnetId
+  }
+}
 
-//  module keyVault 'modules/keyvault.bicep' = {   
-//    name: 'keyvault-deployment'
-//    params: {
-//      baseName: 'finance'
-//      environment: environment
-//      location: location
-//      tags: tags
-//      subnetId: networking.outputs.dataSubnetId
-//    }
-//  }
+module redis 'modules/redis.bicep' = {  
+  name: 'redis-deployment'
+  params: {
+    baseName: 'finance'
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.dataSubnetId
+  }
+}
 
-// module redis 'modules/redis.bicep' = {  
-//   name: 'redis-deployment'
-//   params: {
-//     baseName: 'finance'
-//     environment: environment
-//     location: location
-//     tags: tags
-//     subnetId: networking.outputs.dataSubnetId
-//   }
-// }
+module dataFactory 'modules/dataFactory.bicep' = {   
+  name: 'adf-deployment'
+  params: {
+    baseName: 'finance'
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.dataSubnetId
+    //keyVaultId: keyVault.outputs.keyVaultId    
+    //cosmosDbId: cosmosDb.outputs.accountName
+  }
+}
 
-// // // VM Module
+module keyVault 'modules/keyvault.bicep' = {   
+  name: 'keyvault-deployment'
+  params: {
+    baseName: 'finance'
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.sharedSubnetId
+  }
+}
+
+
+
+// VM Module
 // module virtualMachine 'modules/vm.bicep' = {  
 //   name: 'vm-deployment'
 //   params: {
@@ -158,25 +173,11 @@ module appService 'modules/appService.bicep' = {
 //     environment: environment
 //     location: location
 //     tags: tags
-//     subnetId: networking.outputs.vmSubnetId
+//     subnetId: networking.outputs.applicationSubnetId
 //     adminUsername: adminUsername
 //     adminPassword: adminPassword
 //   }
 // }
-
-//  module dataFactory 'modules/dataFactory.bicep' = {   
-//    name: 'adf-deployment'
-//    params: {
-//      baseName: 'finance'
-//      environment: environment
-//      location: location
-//      tags: tags
-//      subnetId: networking.outputs.dataSubnetId
-//      //keyVaultId: keyVault.outputs.keyVaultId    
-//      //cosmosDbId: cosmosDb.outputs.accountName
-//    }
-//  }
-
 
 
 // // Managed Identity

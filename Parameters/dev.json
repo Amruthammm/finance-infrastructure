@@ -10,16 +10,26 @@
         },
         "location": {
             "value": "canadacentral"
-        }, 
-        "baseName":{
-            "value":"finance"
-        },             
+        },
+        "baseName": {
+            "value": "finance"
+        },
         "tags": {
             "value": {
                 "Environment": "Development",
                 "Application": "Finance",
                 "ManagedBy": "Bicep",
                 "CostCenter": "Finance-Dev"
+            }
+        },
+        "networkConfig": {
+            "value": {
+                "vnetAddressPrefix": "10.0.0.0/16",
+                "subnets": {
+                    "applicationSubnet": "10.0.0.0/20",    
+                    "dataSubnet": "10.0.16.0/20",         
+                    "sharedSubnet": "10.0.32.0/20"       
+                }
             }
         }
     }

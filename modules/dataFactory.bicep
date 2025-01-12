@@ -11,17 +11,26 @@ var deploymentId = uniqueString(resourceGroup().id)
 var dataFactoryName = 'adf-${baseName}-${environment}-${deploymentId}' 
 var privateEndpointName = 'pe-${dataFactoryName}'
 
+
 // Data Factory
 resource dataFactory 'Microsoft.DataFactory/factories@2018-06-01' = {
   name: dataFactoryName
   location: location
   tags: tags
   identity: {
-    type: 'SystemAssigned' // Creates System-Assigned Identity
-  }  
+    type: 'SystemAssigned'
+  }
   properties: {
-    publicNetworkAccess: 'Enabled'    // Can be disabled after private endpoint setup
+    publicNetworkAccess: 'Disabled'    // Disable public access
     globalParameters: {}
+    encryption: {
+      identity: {
+        userAssignedIdentity: ''  // Uses system-assigned identity
+      }
+      vaultBaseUrl: ''
+      keyName: ''
+      keyVersion: ''
+    }
   }
 }
 
@@ -68,12 +77,12 @@ resource managedVirtualNetwork 'Microsoft.DataFactory/factories/managedVirtualNe
 //   }
 // }
 
-// Integration Runtime for VNet integration
-resource integrationRuntime 'Microsoft.DataFactory/factories/integrationRuntimes@2018-06-01' = {
+// Auto Resolve Integration Runtime with Managed VNet
+resource autoResolveRuntime 'Microsoft.DataFactory/factories/integrationRuntimes@2018-06-01' = {
   parent: dataFactory
-  name: 'VNetIntegrationRuntime'
+  name: 'AutoResolveIntegrationRuntime'
   dependsOn: [
-    managedVirtualNetwork // Add dependency on managed VNet
+    managedVirtualNetwork
   ]
   properties: {
     type: 'Managed'
@@ -84,8 +93,23 @@ resource integrationRuntime 'Microsoft.DataFactory/factories/integrationRuntimes
     typeProperties: {
       computeProperties: {
         location: 'AutoResolve'
+        dataFlowProperties: {
+          computeType: 'General'
+          coreCount: 8
+          timeToLive: 10
+        }
       }
     }
+  }
+}
+
+// Managed Private Endpoint for SQL
+resource managedPrivateEndpointSQL 'Microsoft.DataFactory/factories/managedVirtualNetworks/managedPrivateEndpoints@2018-06-01' = {
+  parent: managedVirtualNetwork
+  name: 'SQL'
+  properties: {
+    privateLinkResourceId: subnetId
+    groupId: 'sqlServer'
   }
 }
 
@@ -112,5 +136,52 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
   }
 }
 
+// Diagnostic Settings
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${dataFactoryName}-diagnostics'
+  scope: dataFactory
+  properties: {
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+      }
+    ]
+    logs: [
+      {
+        category: 'ActivityRuns'
+        enabled: true
+      }
+      {
+        category: 'PipelineRuns'
+        enabled: true
+      }
+      {
+        category: 'TriggerRuns'
+        enabled: true
+      }
+      {
+        category: 'SSISPackageEventMessages'
+        enabled: true
+      }
+      {
+        category: 'SSISPackageExecutableStatistics'
+        enabled: true
+      }
+      {
+        category: 'SSISPackageEventMessageContext'
+        enabled: true
+      }
+      {
+        category: 'SSISIntegrationRuntimeLogs'
+        enabled: true
+      }
+    ]
+  }
+}
+
+// Outputs
 output dataFactoryName string = dataFactory.name
 output dataFactoryId string = dataFactory.id
+output principalId string = dataFactory.identity.principalId
+output privateEndpointId string = privateEndpoint.id
