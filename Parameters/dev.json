@@ -25,10 +25,21 @@
         "networkConfig": {
             "value": {
                 "vnetAddressPrefix": "10.0.0.0/16",
-                "subnets": {
-                    "applicationSubnet": "10.0.0.0/20",    
-                    "dataSubnet": "10.0.16.0/20",         
-                    "sharedSubnet": "10.0.32.0/20"       
+                "applicationLayer": {
+                    "prefix": "10.0.0.0/20",
+                    "subnets": {
+                        "webApp": "10.0.1.0/24",
+                        "containerApp": "10.0.2.0/23",
+                        "functionApp": "10.0.4.0/24",
+                        "vm": "10.0.5.0/24",
+                        "aks": "10.0.6.0/24"
+                    }
+                },
+                "dataLayer": {
+                    "prefix": "10.0.16.0/20"
+                },
+                "sharedLayer": {
+                    "prefix": "10.0.32.0/20"
                 }
             }
         }

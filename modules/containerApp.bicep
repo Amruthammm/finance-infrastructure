@@ -4,6 +4,7 @@ param environment string
 param location string
 param tags object
 param subnetId string
+param  appInsightsConnectionString string
 
 var containerAppName = 'aca-${baseName}-${environment}'
 var containerEnvName = 'env-${baseName}-${environment}'
@@ -61,7 +62,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   location: location
   tags: tags
   identity: {
-    type: 'SystemAssigned'  // Enable system-assigned managed identity
+    type: 'SystemAssigned'
   }
   properties: {
     managedEnvironmentId: containerAppEnv.id
@@ -79,7 +80,12 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           }
         ]
       }
-      secrets: []
+      secrets: [
+        {
+          name: 'appinsights-connection-string'
+          value: appInsightsConnectionString
+        }
+      ]
       registries: []
       dapr: {
         enabled: false
@@ -94,15 +100,32 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           name: 'myapp'
           image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           resources: {
-            cpu: json('0.5')    // 0.5 CPU cores
-            memory: '1Gi'       // 1GB memory
+            cpu: json('0.5')
+            memory: '1Gi'
           }
-          env: []
+          env: [
+            {
+              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+              secretRef: 'appinsights-connection-string'
+            }
+            {
+              name: 'APPINSIGHTS_PROFILER_ENABLED'
+              value: 'true'
+            }
+            {
+              name: 'APPINSIGHTS_SNAPSHOT_DEBUGGER_ENABLED'
+              value: 'true'
+            }
+            {
+              name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+              value: '~3'
+            }
+          ]
           probes: [
             {
               type: 'Liveness'
               httpGet: {
-                path: '/'
+                path: '/health'
                 port: 80
                 scheme: 'HTTP'
               }
@@ -113,7 +136,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
             {
               type: 'Readiness'
               httpGet: {
-                path: '/'
+                path: '/health'
                 port: 80
                 scheme: 'HTTP'
               }
@@ -209,6 +232,51 @@ resource containerAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-
         category: 'ContainerAppSystemLogs'
         enabled: true
       }
+      {
+        category: 'ApplicationLogs'
+        enabled: true
+      }
+      {
+        category: 'ContainerAppInstanceLogs'
+        enabled: true
+      }
+      {
+        category: 'ContainerStdoutLogs'
+        enabled: true
+      }
+      {
+        category: 'ContainerStderrLogs'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+        retentionPolicy: {
+          enabled: true
+          days: 30
+        }
+      }
+    ]
+  }
+}
+
+// Environment Diagnostic Settings
+resource containerAppEnvDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${containerEnvName}-diagnostics'
+  scope: containerAppEnv
+  properties: {
+    workspaceId: logWorkspace.id
+    logs: [
+      {
+        category: 'ContainerAppSystemLogs'
+        enabled: true
+      }
+      {
+        category: 'ContainerAppConsoleLogs'
+        enabled: true
+      }
     ]
     metrics: [
       {
@@ -218,6 +286,7 @@ resource containerAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-
     ]
   }
 }
+
 
 // Outputs
 output containerAppUrl string = containerApp.properties.configuration.ingress.fqdn

@@ -15,20 +15,17 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   tags: tags
   properties: {
     sku: {
-      name: 'PerGB2018'  // Pay-as-you-go tier
+      name: 'PerGB2018'  // Change to a supported SKU tier
     }
-    retentionInDays: 30
+    retentionInDays: 30  // Adjust the retention period as needed
     features: {
       enableLogAccessUsingOnlyResourcePermissions: true
-      immediatePurgeDataOn30Days: true
     }
-    workspaceCapping: {
-      dailyQuotaGb: 1  // Set daily data cap
-    }
-    publicNetworkAccessForIngestion: 'Enabled'  // Keep enabled for initial setup
-    publicNetworkAccessForQuery: 'Enabled'      // Keep enabled for initial setup
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
   }
 }
+
 
 // Private Endpoint for Log Analytics
 resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
@@ -53,37 +50,6 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-05-01' = {
   }
 }
 
-// Solutions
-resource containerInsights 'Microsoft.OperationsManagement/solutions@2015-11-01-preview' = {
-  name: 'ContainerInsights(${logAnalytics.name})'
-  location: location
-  tags: tags
-  properties: {
-    workspaceResourceId: logAnalytics.id
-  }
-  plan: {
-    name: 'ContainerInsights(${logAnalytics.name})'
-    product: 'OMSGallery/ContainerInsights'
-    publisher: 'Microsoft'
-    promotionCode: ''
-  }
-}
-
-resource vmInsights 'Microsoft.OperationsManagement/solutions@2015-11-01-preview' = {
-  name: 'VMInsights(${logAnalytics.name})'
-  location: location
-  tags: tags
-  properties: {
-    workspaceResourceId: logAnalytics.id
-  }
-  plan: {
-    name: 'VMInsights(${logAnalytics.name})'
-    product: 'OMSGallery/VMInsights'
-    publisher: 'Microsoft'
-    promotionCode: ''
-  }
-}
-
 // Saved Searches
 resource savedSearches 'Microsoft.OperationalInsights/workspaces/savedSearches@2020-08-01' = {
   parent: logAnalytics
@@ -96,53 +62,12 @@ resource savedSearches 'Microsoft.OperationalInsights/workspaces/savedSearches@2
   }
 }
 
-// Data Collection Rules
-resource dataCollectionRule 'Microsoft.Insights/dataCollectionRules@2021-09-01-preview' = {
-  name: 'dcr-${logAnalyticsName}'
-  location: location
-  tags: tags
-  properties: {
-    dataCollectionEndpointId: null
-    description: 'Data collection rule for VM insights'
-    dataSources: {
-      performanceCounters: [
-        {
-          name: 'VMInsightsPerfCounters'
-          streams: [
-            'Microsoft-InsightsMetrics'
-          ]
-          samplingFrequencyInSeconds: 60
-          counterSpecifiers: [
-            '\\Processor Information(_Total)\\% Processor Time'
-            '\\Memory\\Available Bytes'
-            '\\LogicalDisk(_Total)\\Free Megabytes'
-          ]
-        }
-      ]
-    }
-    destinations: {
-      logAnalytics: [
-        {
-          name: 'VMInsightsPerf'
-          workspaceResourceId: logAnalytics.id
-        }
-      ]
-    }
-    dataFlows: [
-      {
-        streams: [
-          'Microsoft-InsightsMetrics'
-        ]
-        destinations: [
-          'VMInsightsPerf'
-        ]
-      }
-    ]
-  }
-}
-
 // Outputs
 output logAnalyticsId string = logAnalytics.id
 output logAnalyticsName string = logAnalytics.name
 output workspaceKey string = logAnalytics.listKeys().primarySharedKey
 output privateEndpointId string = privateEndpoint.id
+
+
+
+

@@ -24,6 +24,8 @@ param logAnalyticsWorkspaceId string
 @description('Application Insights Connection String')
 param appInsightsConnectionString string
 
+@description('Application Insights Instrumentation String')
+param appInsightsinstrumentationKey string
 param storageAccountName string
 
 // Add unique suffix generation
@@ -92,7 +94,7 @@ resource webApp 'Microsoft.Web/sites@2022-09-01' = {
         }
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsConnectionString
+          value: appInsightsinstrumentationKey
         }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

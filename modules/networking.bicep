@@ -1,18 +1,8 @@
 // modules/networking.bicep
-
-@description('Base name for the resources')
 param baseName string
-
-@description('Environment name')
 param environment string
-
-@description('Azure region')
 param location string
-
-@description('Resource tags')
 param tags object
-
-@description('Network configuration')
 param networkConfig object
 
 // Name variables
@@ -81,11 +71,11 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
       ]
     }
     subnets: [
-      // Application Layer Subnet
+      // Web Apps Subnet
       {
-        name: '${snetBaseName}-application'
+        name: '${snetBaseName}-webapp'
         properties: {
-          addressPrefix: networkConfig.subnets.applicationSubnet
+          addressPrefix: networkConfig.applicationLayer.subnets.webApp
           networkSecurityGroup: {
             id: networkSecurityGroup.id
           }
@@ -96,6 +86,20 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
                 serviceName: 'Microsoft.Web/serverFarms'
               }
             }
+          ]
+          privateEndpointNetworkPolicies: 'Enabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
+        }
+      }
+      // Container Apps Subnet
+      {
+        name: '${snetBaseName}-containerapp'
+        properties: {
+          addressPrefix: networkConfig.applicationLayer.subnets.containerApp
+          networkSecurityGroup: {
+            id: networkSecurityGroup.id
+          }
+          delegations: [
             {
               name: 'Microsoft.App.environments'
               properties: {
@@ -103,30 +107,78 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
               }
             }
           ]
+          privateEndpointNetworkPolicies: 'Enabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
+        }
+      }
+      // Function Apps Subnet
+      {
+        name: '${snetBaseName}-function'
+        properties: {
+          addressPrefix: networkConfig.applicationLayer.subnets.functionApp
+          networkSecurityGroup: {
+            id: networkSecurityGroup.id
+          }
+          delegations: [
+            {
+              name: 'Microsoft.Web.serverFarms'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
+          privateEndpointNetworkPolicies: 'Enabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
+        }
+      }
+      // VM Subnet
+      {
+        name: '${snetBaseName}-vm'
+        properties: {
+          addressPrefix: networkConfig.applicationLayer.subnets.vm
+          networkSecurityGroup: {
+            id: networkSecurityGroup.id
+          }
+          privateEndpointNetworkPolicies: 'Enabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
+        }
+      }
+      // AKS Subnet
+      {
+        name: '${snetBaseName}-aks'
+        properties: {
+          addressPrefix: networkConfig.applicationLayer.subnets.aks
+          networkSecurityGroup: {
+            id: networkSecurityGroup.id
+          }
+          privateEndpointNetworkPolicies: 'Enabled'
+          privateLinkServiceNetworkPolicies: 'Enabled'
         }
       }
       // Data Layer Subnet
       {
         name: '${snetBaseName}-data'
         properties: {
-          addressPrefix: networkConfig.subnets.dataSubnet
+          addressPrefix: networkConfig.dataLayer.prefix
           networkSecurityGroup: {
             id: networkSecurityGroup.id
           }
           privateEndpointNetworkPolicies: 'Disabled'
           privateLinkServiceNetworkPolicies: 'Enabled'
+          delegations: []
         }
       }
-      // Shared Infrastructure Layer Subnet
+      // Shared Layer Subnet
       {
         name: '${snetBaseName}-shared'
         properties: {
-          addressPrefix: networkConfig.subnets.sharedSubnet
+          addressPrefix: networkConfig.sharedLayer.prefix
           networkSecurityGroup: {
             id: networkSecurityGroup.id
           }
           privateEndpointNetworkPolicies: 'Disabled'
           privateLinkServiceNetworkPolicies: 'Enabled'
+          delegations: []
         }
       }
     ]
@@ -136,7 +188,11 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2023-05-01' = {
 // Outputs
 output vnetName string = virtualNetwork.name
 output vnetId string = virtualNetwork.id
-output applicationSubnetId string = virtualNetwork.properties.subnets[0].id
-output dataSubnetId string = virtualNetwork.properties.subnets[1].id
-output sharedSubnetId string = virtualNetwork.properties.subnets[2].id
+output webAppSubnetId string = virtualNetwork.properties.subnets[0].id
+output containerAppSubnetId string = virtualNetwork.properties.subnets[1].id
+output functionSubnetId string = virtualNetwork.properties.subnets[2].id
+output vmSubnetId string = virtualNetwork.properties.subnets[3].id
+output aksSubnetId string = virtualNetwork.properties.subnets[4].id
+output dataSubnetId string = virtualNetwork.properties.subnets[5].id
+output sharedSubnetId string = virtualNetwork.properties.subnets[6].id
 output nsgId string = networkSecurityGroup.id
