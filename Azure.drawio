@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" version="26.0.4">
   <diagram id="nsF88upT3viCeJZ_v5GG" name="Page-1">
-    <mxGraphModel dx="2867" dy="1160" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+    <mxGraphModel dx="2150" dy="870" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -10,7 +10,7 @@
         <mxCell id="wNrSH_80lObPvnNN3sQd-683" value="Resource Group" style="whiteSpace=wrap;strokeWidth=2;verticalAlign=top;fontStyle=1" vertex="1" parent="wNrSH_80lObPvnNN3sQd-682">
           <mxGeometry x="77.5828729281768" y="36" width="1237.5414364640885" height="1130" as="geometry" />
         </mxCell>
-        <mxCell id="wNrSH_80lObPvnNN3sQd-684" value="Virtual Network" style="whiteSpace=wrap;strokeWidth=2;verticalAlign=top;fontStyle=1" vertex="1" parent="wNrSH_80lObPvnNN3sQd-683">
+        <mxCell id="wNrSH_80lObPvnNN3sQd-684" value="Virtual Network (10.0.0.0/16)" style="whiteSpace=wrap;strokeWidth=2;verticalAlign=top;fontStyle=1" vertex="1" parent="wNrSH_80lObPvnNN3sQd-683">
           <mxGeometry x="112.42" y="84" width="1048.31" height="1006" as="geometry" />
         </mxCell>
         <mxCell id="wNrSH_80lObPvnNN3sQd-685" value="Storage Account" style="strokeWidth=2;shape=process;whiteSpace=wrap;size=0.04;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
@@ -25,19 +25,19 @@
         <mxCell id="wNrSH_80lObPvnNN3sQd-691" value="" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
           <mxGeometry x="90.57957513399562" y="38.91132075471698" width="919.4156874552688" height="302.74905660377357" as="geometry" />
         </mxCell>
-        <mxCell id="wNrSH_80lObPvnNN3sQd-692" value="Virtual Machines" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
+        <mxCell id="wNrSH_80lObPvnNN3sQd-692" value="Virtual Machines (10.0.5.0/24)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
           <mxGeometry x="281.9461913357401" y="85.88962264150943" width="227.07075812274368" height="56.943396226415096" as="geometry" />
         </mxCell>
-        <mxCell id="wNrSH_80lObPvnNN3sQd-693" value="Container Apps" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
+        <mxCell id="wNrSH_80lObPvnNN3sQd-693" value="Container Apps (10.0.2.0/23)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
           <mxGeometry x="620.660072202166" y="85.88962264150943" width="227.07075812274368" height="56.943396226415096" as="geometry" />
         </mxCell>
-        <mxCell id="wNrSH_80lObPvnNN3sQd-694" value="Function Apps" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
+        <mxCell id="wNrSH_80lObPvnNN3sQd-694" value="Function Apps (10.0.4.0/24)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
           <mxGeometry x="281.9461913357401" y="171.77924528301887" width="227.07075812274368" height="56.943396226415096" as="geometry" />
         </mxCell>
-        <mxCell id="wNrSH_80lObPvnNN3sQd-695" value="Web Apps" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
+        <mxCell id="wNrSH_80lObPvnNN3sQd-695" value="Web Apps (10.0.1.0/24)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
           <mxGeometry x="620.660072202166" y="171.77924528301887" width="227.07075812274368" height="56.943396226415096" as="geometry" />
         </mxCell>
-        <mxCell id="wNrSH_80lObPvnNN3sQd-696" value="AKS Cluster" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
+        <mxCell id="wNrSH_80lObPvnNN3sQd-696" value="AKS Cluster (10.0.6.0/24)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
           <mxGeometry x="281.9461913357401" y="257.1943396226415" width="227.07075812274368" height="56.943396226415096" as="geometry" />
         </mxCell>
         <mxCell id="wNrSH_80lObPvnNN3sQd-697" value="&lt;b&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;Subnet-1 Application Layer (&lt;/font&gt;10.0.0.0/20)&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="wNrSH_80lObPvnNN3sQd-684">
