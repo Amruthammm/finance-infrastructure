@@ -162,7 +162,17 @@ module keyVault 'modules/keyvault.bicep' = {
  }
 }
 
-//teju
+module managedIdentity 'modules/managedIdentity.bicep' = { 
+  name: 'identity-deployment'
+  params: {
+    baseName: 'finance'
+    environment: environment
+    location: location
+    tags: tags
+    subnetId: networking.outputs.sharedSubnetId
+  }
+}
+
 
 // // VM Module
 // // module virtualMachine 'modules/vm.bicep' = {  
